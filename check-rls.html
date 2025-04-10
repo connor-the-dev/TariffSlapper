@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase RLS Policy Check</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+        .card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Connection & Policy Test</h1>
+    
+    <div class="card">
+        <h2>Connection Test</h2>
+        <button id="testConnection">Test Supabase Connection</button>
+        <div id="connectionResult"></div>
+    </div>
+    
+    <div class="card">
+        <h2>Row-Level Security Test</h2>
+        <button id="testInsert">Test INSERT</button>
+        <button id="testSelect">Test SELECT</button>
+        <button id="testUpdate">Test UPDATE</button>
+        <div id="rlsResult"></div>
+    </div>
+    
+    <h3>Manual RLS Policy Setup Steps:</h3>
+    <ol>
+        <li>Go to Supabase Dashboard → Authentication → Policies</li>
+        <li>For the <code>players</code> table, create these policies:</li>
+        <li>
+            <strong>For SELECT:</strong><br>
+            Policy name: <code>Enable read access for all users</code><br>
+            Using expression: <code>true</code>
+        </li>
+        <li>
+            <strong>For INSERT:</strong><br>
+            Policy name: <code>Enable insert for unauthenticated users</code><br>
+            Using expression: <code>true</code>
+        </li>
+        <li>
+            <strong>For UPDATE:</strong><br>
+            Policy name: <code>Enable update for unauthenticated users</code><br>
+            Using expression: <code>true</code>
+        </li>
+    </ol>
+
+    <script>
+        const SUPABASE_URL = 'https://nftxdkdtegdndwcdcyje.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdHhka2R0ZWdkbmR3Y2RjeWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyOTgzNTYsImV4cCI6MjA1OTg3NDM1Nn0.T3YsgBKvXVdTFP4Qy94UPGkTmDIw5-W2C8f5P-84Bv0';
+        
+        // Create with proper headers
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+            auth: {
+                autoRefreshToken: false,
+                persistSession: false
+            },
+            global: {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+            }
+        });
+        
+        // Test connection
+        document.getElementById('testConnection').addEventListener('click', async () => {
+            const result = document.getElementById('connectionResult');
+            result.innerHTML = "Testing connection...";
+            
+            try {
+                const { data, error } = await supabaseClient.from('players').select('*').limit(1);
+                
+                if (error) {
+                    result.innerHTML = `<div class="error">❌ Connection failed: ${error.message}</div>`;
+                    console.error("Connection error:", error);
+                } else {
+                    result.innerHTML = `<div class="success">✅ Connection successful!</div>`;
+                    if (data && data.length > 0) {
+                        result.innerHTML += `<pre>Found ${data.length} player(s).\nColumns: ${Object.keys(data[0]).join(', ')}</pre>`;
+                    } else {
+                        result.innerHTML += `<div>Table exists but has no data.</div>`;
+                    }
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error("Error:", error);
+            }
+        });
+        
+        // Test insert
+        document.getElementById('testInsert').addEventListener('click', async () => {
+            const result = document.getElementById('rlsResult');
+            result.innerHTML = "Testing INSERT policy...";
+            
+            try {
+                const testPlayer = {
+                    display_name: `Test Player ${Math.floor(Math.random() * 10000)}`,
+                    email: `test${Math.floor(Math.random() * 10000)}@example.com`,
+                    score: Math.floor(Math.random() * 1000)
+                };
+                
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .insert([testPlayer]);
+                
+                if (error) {
+                    result.innerHTML = `<div class="error">❌ INSERT failed: ${error.message}</div><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                    console.error("INSERT error:", error);
+                } else {
+                    result.innerHTML = `<div class="success">✅ INSERT successful! This means your RLS INSERT policy is working correctly.</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error("Error:", error);
+            }
+        });
+        
+        // Test select
+        document.getElementById('testSelect').addEventListener('click', async () => {
+            const result = document.getElementById('rlsResult');
+            result.innerHTML = "Testing SELECT policy...";
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .limit(3);
+                
+                if (error) {
+                    result.innerHTML = `<div class="error">❌ SELECT failed: ${error.message}</div><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                    console.error("SELECT error:", error);
+                } else {
+                    const count = data ? data.length : 0;
+                    result.innerHTML = `<div class="success">✅ SELECT successful! Found ${count} player(s). This means your RLS SELECT policy is working correctly.</div>`;
+                    if (data && data.length > 0) {
+                        result.innerHTML += `<pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>`;
+                    }
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error("Error:", error);
+            }
+        });
+        
+        // Test update
+        document.getElementById('testUpdate').addEventListener('click', async () => {
+            const result = document.getElementById('rlsResult');
+            result.innerHTML = "Testing UPDATE policy...";
+            
+            try {
+                // First get a player to update
+                const { data: players, error: selectError } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .limit(1);
+                
+                if (selectError || !players || players.length === 0) {
+                    result.innerHTML = `<div class="error">❌ Could not find a player to update: ${selectError ? selectError.message : "No players found"}</div>`;
+                    return;
+                }
+                
+                const player = players[0];
+                const idField = Object.keys(player).find(k => k === 'id' || k === 'player_id' || k === 'uuid');
+                
+                if (!idField) {
+                    result.innerHTML = `<div class="error">❌ Could not determine ID field in player data.</div>`;
+                    return;
+                }
+                
+                const newScore = Math.floor(Math.random() * 1000);
+                
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .update({ score: newScore })
+                    .eq(idField, player[idField]);
+                
+                if (error) {
+                    result.innerHTML = `<div class="error">❌ UPDATE failed: ${error.message}</div><pre>${JSON.stringify(error, null, 2)}</pre>`;
+                    console.error("UPDATE error:", error);
+                } else {
+                    result.innerHTML = `<div class="success">✅ UPDATE successful! This means your RLS UPDATE policy is working correctly.</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Error: ${error.message}</div>`;
+                console.error("Error:", error);
+            }
+        });
+    </script>
+</body>
+</html> 

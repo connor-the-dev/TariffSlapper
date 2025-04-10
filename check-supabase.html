@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Supabase Table Check</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 10px 0; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Supabase Table Structure Checker</h1>
+    <button id="checkTable">Check Players Table</button>
+    <div>
+        <h3>Results:</h3>
+        <pre id="results">Click the button to check your table...</pre>
+    </div>
+
+    <script>
+        document.getElementById('checkTable').addEventListener('click', async () => {
+            const results = document.getElementById('results');
+            const SUPABASE_URL = 'https://nftxdkdtegdndwcdcyje.supabase.co';
+            const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5mdHhka2R0ZWdkbmR3Y2RjeWplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQyOTgzNTYsImV4cCI6MjA1OTg3NDM1Nn0.T3YsgBKvXVdTFP4Qy94UPGkTmDIw5-W2C8f5P-84Bv0';
+            const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            results.innerText = 'Checking Supabase connection...\n';
+            
+            try {
+                // First, try a basic query to see if we can connect
+                results.innerText += 'Attempting to query the players table...\n';
+                const { data, error } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    results.innerText += `Error querying table: ${error.message}\n`;
+                    throw error;
+                }
+                
+                // Now get column information
+                results.innerText += 'Successfully connected! Getting table structure...\n\n';
+                
+                const { data: columnData, error: columnError } = await supabaseClient
+                    .rpc('get_table_columns', { table_name: 'players' });
+                
+                if (columnError) {
+                    results.innerText += `Error getting column structure: ${columnError.message}\n`;
+                    results.innerText += 'Trying an alternative approach...\n';
+                    
+                    // If RPC doesn't work, let's try a direct query to see what we get back
+                    const { data: sampleData, error: sampleError } = await supabaseClient
+                        .from('players')
+                        .select('*')
+                        .limit(1);
+                    
+                    if (sampleError) {
+                        results.innerText += `Failed to get sample data: ${sampleError.message}\n`;
+                    } else if (sampleData && sampleData.length > 0) {
+                        results.innerText += 'Found columns based on sample data:\n';
+                        const columns = Object.keys(sampleData[0]);
+                        columns.forEach(col => {
+                            results.innerText += `- ${col} (${typeof sampleData[0][col]})\n`;
+                        });
+                    } else {
+                        results.innerText += 'Table exists but has no data to examine structure.\n';
+                    }
+                } else {
+                    results.innerText += 'Column structure:\n';
+                    columnData.forEach(col => {
+                        results.innerText += `- ${col.column_name} (${col.data_type})\n`;
+                    });
+                }
+                
+                // Get table data
+                results.innerText += '\nFirst few rows of your players table:\n';
+                const { data: tableData, error: tableError } = await supabaseClient
+                    .from('players')
+                    .select('*')
+                    .limit(3);
+                
+                if (tableError) {
+                    results.innerText += `Error fetching data: ${tableError.message}\n`;
+                } else if (tableData && tableData.length > 0) {
+                    results.innerText += JSON.stringify(tableData, null, 2);
+                } else {
+                    results.innerText += 'No rows found in the players table.';
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                results.innerText += `\nError: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html> 

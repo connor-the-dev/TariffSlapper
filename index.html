@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tariff Tycoon: Trump's Trade Toss</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧢</text></svg>">
+    <!-- Supabase Client Library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="timer">Time: <span id="time">30</span>s</div>
+            <div class="score">America First Score™: <span id="score">0</span></div>
+        </div>
+        
+        <div id="game-area">
+            <div id="start-screen">
+                <h1>Tariff Tycoon</h1>
+                <h2>Trump's Trade Toss</h2>
+                <p>Slap tariffs on foreign imports! Avoid hitting American goods!</p>
+                <ul>
+                    <li>Hit imports: +100 points 🇨🇳 🇯🇵 🇰🇷 📱 👟</li>
+                    <li>Hit American goods: -500 points 🇺🇸 🦅 🍔 🏈</li>
+                </ul>
+                <button id="start-button">START GAME</button>
+                
+                <!-- Leaderboard on start screen -->
+                <div class="leaderboard">
+                    <h3>🏆 Top Tariff Tycoons 🏆</h3>
+                    <div id="leaderboard-list">
+                        <p class="loading-text">Loading leaderboard...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="end-screen" class="hidden">
+                <h2>GAME OVER!</h2>
+                <p>Your America First Score™:</p>
+                <p id="final-score">0</p>
+                <p id="high-score-message" class="hidden">🎉 NEW HIGH SCORE! 🎉</p>
+                <div class="button-container">
+                    <button id="play-again">PLAY AGAIN</button>
+                    <button id="share-button">SHARE ON X</button>
+                </div>
+                
+                <!-- Leaderboard on end screen -->
+                <div class="leaderboard">
+                    <h3>🏆 Top Tariff Tycoons 🏆</h3>
+                    <div id="leaderboard-list-end">
+                        <p class="loading-text">Loading leaderboard...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Player Info Modal -->
+            <div id="player-modal" class="modal hidden">
+                <div class="modal-content">
+                    <h3>Save Your Score!</h3>
+                    <p>Enter your details to join the leaderboard:</p>
+                    <form id="player-form">
+                        <div class="form-group">
+                            <label for="display-name">Display Name:</label>
+                            <input type="text" id="display-name" required maxlength="20">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" required>
+                        </div>
+                        <div class="button-container">
+                            <button type="submit" id="save-player">SAVE & CONTINUE</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
